@@ -25,6 +25,8 @@ dev = [
     "pytest-django>=4.11",
     "factory-boy>=3.3",
     "ruff>=0.11",
+    "pytest-cov>=7.1.0",
+    "pre-commit>=4.7.0",
 ]
 
 [tool.uv]
@@ -35,6 +37,10 @@ DJANGO_SETTINGS_MODULE = "config.settings.test"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-ra"
+
+[tool.coverage.run]
+source = ["apps", "common"]
+omit = ["*/migrations/*"]
 
 [tool.ruff]
 line-length = 100

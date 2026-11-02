@@ -11,3 +11,5 @@ staticfiles/
 .vscode/
 .claude/
 CLAUDE.md
+.coverage
+htmlcov/

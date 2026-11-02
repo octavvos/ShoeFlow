@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: shoeflow
+          POSTGRES_USER: shoeflow
+          POSTGRES_PASSWORD: shoeflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shoeflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DATABASE_URL: postgres://shoeflow:shoeflow@localhost:5432/shoeflow
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Bog'liqliklarni o'rnatish
+        run: uv sync --frozen
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Migratsiyalar tekshiruvi
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Testlar
+        run: uv run pytest --cov --cov-report=term-missing
