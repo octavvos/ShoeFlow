@@ -22,6 +22,10 @@ fi
 if ! command -v docker >/dev/null; then
     echo "==> Docker"
     curl -fsSL https://get.docker.com | sh
+elif ! docker compose version >/dev/null 2>&1; then
+    # Ubuntu'ning docker.io paketida compose yo'q; daemon'ni qayta ishga tushirmasdan faqat plagin
+    echo "==> docker compose plagini"
+    apt-get install -y -q docker-compose-v2
 fi
 
 echo "==> Kod: $APP_DIR"
