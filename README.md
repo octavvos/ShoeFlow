@@ -6,6 +6,24 @@ Oyoq kiyim ishlab chiqaruvchi firma uchun CRM: mijozlar, katalog (model, rang, r
 
 **Stek:** Python 3.12 · Django 5.2 · DRF · PostgreSQL 16 · Redis · Celery · JWT · Docker
 
+## Jonli demo
+
+**Swagger:** https://shoeflow.bann.uz/api/docs/
+
+1. `POST /api/v1/auth/token/` orqali quyidagi foydalanuvchilardan biri bilan token oling.
+2. Swagger'dagi **Authorize** tugmasiga `access` tokenni kiriting.
+
+Har bir rol tizimni o'z ruxsatlari doirasida ko'radi:
+
+| Login | Rol | Nimani ko'rish mumkin |
+|---|---|---|
+| `direktor` | Direktor | Hamma narsa, limitdan oshirib tasdiqlash |
+| `menejer1` | Savdo menejeri | Faqat o'z mijozlari va buyurtmalari |
+| `omborchi` | Omborchi | Qoldiqlar, kirim/chiqim, buyurtmalarni jo'natish |
+| `hisobchi` | Hisobchi | To'lovlar, qarzdorlar, akt-sverka (Excel) |
+
+Hammasining paroli: `Demo-12345`. Demo ma'lumotlar har kuni 03:00 da qayta tiklanadi.
+
 ## Ishga tushirish
 
 ```bash
