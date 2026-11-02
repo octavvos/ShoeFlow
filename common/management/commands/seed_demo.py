@@ -6,9 +6,14 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from apps.catalog.models import Category, Color, ProductModel, SizeRun
+from apps.catalog.models import Category, Color, ProductModel, SizeRun, Variant
 from apps.catalog.services import generate_variants
 from apps.customers.models import Customer, Interaction
+from apps.inventory import services as inventory
+from apps.inventory.models import Warehouse
+from apps.inventory.services import StockLine
+from apps.orders import services as orders
+from apps.orders.models import Order
 from apps.users.models import Role, User
 from common.choices import Currency, Region
 
@@ -126,6 +131,25 @@ INTERACTION_NOTES = [
     (Interaction.Type.NOTE, "To'lovni oy oxirigacha qilishga va'da berdi."),
 ]
 
+WAREHOUSES = [
+    ("Asosiy ombor", "Toshkent sh., Sergeli tumani"),
+    ("Samarqand filiali", "Samarqand sh., Siyob bozori yonida"),
+]
+
+# Buyurtmalar qaysi holatgacha olib boriladi
+ORDER_STATUSES = [
+    Order.Status.DELIVERED,
+    Order.Status.DELIVERED,
+    Order.Status.DELIVERED,
+    Order.Status.SHIPPED,
+    Order.Status.SHIPPED,
+    Order.Status.CONFIRMED,
+    Order.Status.CONFIRMED,
+    Order.Status.DRAFT,
+    Order.Status.DRAFT,
+    Order.Status.CANCELLED,
+]
+
 
 class Command(BaseCommand):
     help = "Tizimni sinab ko'rish uchun demo ma'lumotlar yaratadi."
@@ -140,6 +164,8 @@ class Command(BaseCommand):
             users = self.create_users()
             self.create_catalog()
             self.create_customers(users)
+            warehouses = self.create_stock(users)
+            self.create_orders(users, warehouses[0])
 
         self.stdout.write(self.style.SUCCESS("Demo ma'lumotlar yaratildi."))
         self.stdout.write(f"Foydalanuvchilar: {', '.join(u[0] for u in USERS)}")
@@ -210,3 +236,58 @@ class Command(BaseCommand):
                     body=body,
                     occurred_at=timezone.now() - timedelta(days=days_ago),
                 )
+
+    def create_stock(self, users: dict[str, User]) -> list[Warehouse]:
+        warehouses = [
+            Warehouse.objects.create(name=name, address=address) for name, address in WAREHOUSES
+        ]
+        main, branch = warehouses
+        variants = list(Variant.objects.order_by("id"))
+        inventory.receive(
+            main,
+            [StockLine(v.id, self.rnd.randint(40, 80)) for v in variants],
+            user=users["omborchi"],
+            reference="Boshlang'ich qoldiq",
+        )
+        inventory.transfer(
+            main,
+            branch,
+            [StockLine(v.id, 10) for v in self.rnd.sample(variants, k=len(variants) // 3)],
+            user=users["omborchi"],
+            comment="Filialni to'ldirish",
+        )
+        return warehouses
+
+    def create_orders(self, users: dict[str, User], warehouse: Warehouse):
+        customers = list(Customer.objects.select_related("manager").order_by("id"))
+        models = list(ProductModel.objects.prefetch_related("variants").order_by("id"))
+
+        for target in ORDER_STATUSES:
+            customer = self.rnd.choice(customers)
+            manager = customer.manager
+            order = orders.create_order(
+                customer=customer,
+                warehouse=warehouse,
+                user=manager,
+                discount_percent=Decimal(self.rnd.choice([0, 0, 3, 5])),
+            )
+            for product_model in self.rnd.sample(models, k=self.rnd.randint(1, 3)):
+                color = self.rnd.choice(product_model.variants.all()).color
+                orders.add_boxes(
+                    order,
+                    product_model,
+                    color,
+                    product_model.default_size_run,
+                    self.rnd.randint(1, 3),
+                )
+
+            if target == Order.Status.DRAFT:
+                continue
+            orders.confirm_order(order, user=manager)
+            if target == Order.Status.CANCELLED:
+                orders.cancel_order(order, user=manager)
+                continue
+            if target in (Order.Status.SHIPPED, Order.Status.DELIVERED):
+                orders.ship_order(order, user=users["omborchi"])
+            if target == Order.Status.DELIVERED:
+                orders.deliver_order(order, user=users["omborchi"])
