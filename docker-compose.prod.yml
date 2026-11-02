@@ -1,7 +1,6 @@
 # Yengil prod stack: reverse proxy (nginx) va HTTPS — host serverda (deploy/nginx.conf).
 # Kichik VPS uchun: gunicorn 2 worker, Celery worker va beat bitta jarayonda.
 x-app: &app
-  build: .
   image: shoeflow:latest
   env_file: .env
   restart: unless-stopped
@@ -36,6 +35,8 @@ services:
 
   web:
     <<: *app
+    # Image'ni faqat web build qiladi — ikki servis bir tegni parallel build qilsa to'qnashadi
+    build: .
     command: >-
       sh -c "python manage.py migrate --noinput
       && python manage.py collectstatic --noinput -v0
@@ -56,6 +57,7 @@ services:
 
   celery:
     <<: *app
+    pull_policy: never
     # -B: beat shu jarayon ichida; solo pool — alohida child jarayonsiz, xotirani tejaydi
     command: celery -A config worker -B --pool solo -l info --schedule /tmp/celerybeat-schedule
 
