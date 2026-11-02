@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -37,6 +38,7 @@ LOCAL_APPS = [
     "apps.catalog",
     "apps.inventory",
     "apps.orders",
+    "apps.finance",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -124,6 +126,7 @@ SPECTACULAR_SETTINGS = {
         "CustomerTypeEnum": "apps.customers.models.Customer.Type",
         "InteractionTypeEnum": "apps.customers.models.Interaction.Type",
         "StockMovementTypeEnum": "apps.inventory.models.StockMovement.Type",
+        "LedgerEntryTypeEnum": "apps.finance.models.LedgerEntry.Type",
     },
 }
 
@@ -134,3 +137,10 @@ CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 5 * 60
+CELERY_BEAT_SCHEDULE = {
+    # Markaziy bank kursni har kuni e'lon qiladi
+    "fetch-cbu-rates": {
+        "task": "apps.finance.tasks.fetch_cbu_rates",
+        "schedule": crontab(hour=9, minute=0),
+    },
+}

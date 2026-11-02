@@ -66,6 +66,15 @@ class CustomerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Faqat savdo menejerini biriktirish mumkin.")
         return manager
 
+    def validate_currency(self, value):
+        customer = self.instance
+        has_history = customer and (customer.orders.exists() or customer.ledger_entries.exists())
+        if has_history and value != customer.currency:
+            raise serializers.ValidationError(
+                "Buyurtma yoki hisob-kitob bor mijozning valyutasini o'zgartirib bo'lmaydi."
+            )
+        return value
+
     def validate_credit_limit(self, value):
         if value < 0:
             raise serializers.ValidationError("Kredit limiti manfiy bo'lishi mumkin emas.")
