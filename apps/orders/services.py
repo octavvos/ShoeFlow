@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from apps.catalog.models import Color, ProductModel, SizeRun, Variant
 from apps.customers.models import Customer
+from apps.finance import services as finance
 from apps.inventory import services as inventory
 from apps.inventory.models import Warehouse
 from apps.inventory.services import StockLine
@@ -215,6 +216,7 @@ def confirm_order(order: Order, *, user: User) -> Order:
     lines = _stock_lines(order)
     if not lines:
         raise BusinessError("Bo'sh buyurtmani tasdiqlab bo'lmaydi.")
+    finance.check_credit_limit(order, user=user)
     inventory.reserve(order.warehouse, lines)
     order.confirmed_at = timezone.now()
     order.save(update_fields=["status", "confirmed_at", "updated_at"])
@@ -226,6 +228,7 @@ def ship_order(order: Order, *, user: User) -> Order:
     order = _lock(order)
     _transition(order, Order.Status.SHIPPED)
     inventory.ship(order.warehouse, _stock_lines(order), user=user, reference=order.number)
+    finance.record_shipment(order, user=user)
     order.shipped_at = timezone.now()
     order.save(update_fields=["status", "shipped_at", "updated_at"])
     return order

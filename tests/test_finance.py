@@ -12,6 +12,7 @@ from apps.inventory import services as inventory
 from apps.inventory.services import StockLine
 from apps.orders import services as orders
 from apps.users.models import Role
+from common.exceptions import BusinessError
 
 from .factories import CustomerFactory, UserFactory, VariantFactory, WarehouseFactory
 
@@ -158,6 +159,61 @@ def test_payments_cannot_be_edited_or_deleted(accountant_client, customer):
     url = f"/api/v1/finance/payments/{payment.id}/"
     assert accountant_client.patch(url, {"amount": "1"}, format="json").status_code == 405
     assert accountant_client.delete(url).status_code == 405
+
+
+def test_shipment_creates_debt(customer, make_order, director):
+    order = make_order(customer, pairs=10)
+    orders.confirm_order(order, user=director)
+    orders.ship_order(order, user=director)
+
+    entry = customer.ledger_entries.get()
+    assert entry.type == LedgerEntry.Type.SHIPMENT
+    assert entry.amount == Decimal("250.00")
+    assert entry.order == order
+    assert balance(customer) == Decimal("250.00")
+
+
+class TestCreditLimit:
+    def test_manager_cannot_exceed_limit_but_director_can(self, customer, make_order, director):
+        customer.credit_limit = Decimal("100")
+        customer.save()
+        manager = UserFactory(role=Role.SALES_MANAGER)
+        order = make_order(customer, pairs=10, user=manager)  # 250 USD
+
+        with pytest.raises(BusinessError) as exc:
+            orders.confirm_order(order, user=manager)
+        assert exc.value.extra["code"] == "credit_limit"
+        assert exc.value.extra["exposure"] == "250.00"
+
+        assert orders.confirm_order(order, user=director).status == "confirmed"
+
+    def test_prepayment_allows_confirmation(self, customer, make_order):
+        manager = UserFactory(role=Role.SALES_MANAGER)
+        finance.register_payment(
+            customer=customer, amount=Decimal("300"), currency="USD", method="bank", user=None
+        )
+        order = make_order(customer, pairs=10, user=manager)
+        assert orders.confirm_order(order, user=manager).status == "confirmed"
+
+    def test_open_orders_count_towards_limit(self, customer, make_order):
+        customer.credit_limit = Decimal("400")
+        customer.save()
+        manager = UserFactory(role=Role.SALES_MANAGER)
+
+        orders.confirm_order(make_order(customer, pairs=10, user=manager), user=manager)
+        with pytest.raises(BusinessError):
+            orders.confirm_order(make_order(customer, pairs=10, user=manager), user=manager)
+
+    def test_api_returns_readable_error(self, client_for, make_order):
+        manager_client = client_for(Role.SALES_MANAGER)
+        customer = CustomerFactory(manager=manager_client.user, credit_limit=Decimal("50"))
+        order = make_order(customer, pairs=4, user=manager_client.user)  # 100 USD
+
+        response = manager_client.post(f"/api/v1/orders/{order.id}/confirm/")
+        assert response.status_code == 400
+        assert response.data["code"] == "credit_limit"
+        assert response.data["credit_limit"] == "50.00"
+        assert "Kredit limiti" in response.data["detail"]
 
 
 class TestReconciliation:

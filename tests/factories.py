@@ -28,6 +28,8 @@ class CustomerFactory(factory.django.DjangoModelFactory):
     phone = factory.Sequence(lambda n: f"+99890{n:07d}")
     region = Region.TASHKENT_CITY
     manager = factory.SubFactory(UserFactory)
+    # Kredit limiti alohida testlarda tekshiriladi, boshqa testlarga xalaqit bermasin
+    credit_limit = Decimal("1000000")
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):

@@ -9,6 +9,8 @@ from django.utils import timezone
 from apps.catalog.models import Category, Color, ProductModel, SizeRun, Variant
 from apps.catalog.services import generate_variants
 from apps.customers.models import Customer, Interaction
+from apps.finance import services as finance
+from apps.finance.models import CurrencyRate, Payment
 from apps.inventory import services as inventory
 from apps.inventory.models import Warehouse
 from apps.inventory.services import StockLine
@@ -165,7 +167,10 @@ class Command(BaseCommand):
             self.create_catalog()
             self.create_customers(users)
             warehouses = self.create_stock(users)
+            self.create_rates()
+            self.create_opening_balances(users)
             self.create_orders(users, warehouses[0])
+            self.create_payments(users)
 
         self.stdout.write(self.style.SUCCESS("Demo ma'lumotlar yaratildi."))
         self.stdout.write(f"Foydalanuvchilar: {', '.join(u[0] for u in USERS)}")
@@ -283,7 +288,8 @@ class Command(BaseCommand):
 
             if target == Order.Status.DRAFT:
                 continue
-            orders.confirm_order(order, user=manager)
+            # Demo uchun direktor tasdiqlaydi — kredit limiti rahbariyatga to'sqinlik qilmaydi
+            orders.confirm_order(order, user=users["direktor"])
             if target == Order.Status.CANCELLED:
                 orders.cancel_order(order, user=manager)
                 continue
@@ -291,3 +297,72 @@ class Command(BaseCommand):
                 orders.ship_order(order, user=users["omborchi"])
             if target == Order.Status.DELIVERED:
                 orders.deliver_order(order, user=users["omborchi"])
+
+    def create_rates(self):
+        """Oxirgi 60 kunlik USD kursi (taxminiy)."""
+        today = timezone.localdate()
+        rate = Decimal("12500")
+        for days_ago in range(60, -1, -1):
+            rate += Decimal(self.rnd.randint(-15, 20))
+            CurrencyRate.objects.create(
+                currency=Currency.USD,
+                rate=rate,
+                date=today - timedelta(days=days_ago),
+                source=CurrencyRate.Source.MANUAL,
+            )
+
+    def create_opening_balances(self, users: dict[str, User]):
+        """Eski tizimdan o'tkazilgan qarzlar."""
+        start = timezone.localdate() - timedelta(days=90)
+        for customer in Customer.objects.order_by("id")[:3]:
+            finance.add_adjustment(
+                customer,
+                Decimal(self.rnd.choice([350, 800, 1200])),
+                user=users["hisobchi"],
+                description="Eski tizimdan o'tkazilgan qarz",
+                entry_date=start,
+                opening=True,
+            )
+
+    def create_payments(self, users: dict[str, User]):
+        """Jo'natilgan buyurtmalar uchun to'liq yoki qisman to'lovlar."""
+        accountant = users["hisobchi"]
+        today = timezone.localdate()
+        shipped = Order.objects.filter(
+            status__in=[Order.Status.SHIPPED, Order.Status.DELIVERED]
+        ).order_by("id")
+        for i, order in enumerate(shipped):
+            share = Decimal(self.rnd.choice(["1", "1", "0.5", "0.3"]))
+            amount = (order.total_amount * share).quantize(Decimal("0.01"))
+            paid_at = today - timedelta(days=self.rnd.randint(0, 20))
+            if i % 2:
+                # So'mda naqd to'lov — kurs bo'yicha dollarga o'tkaziladi
+                rate = finance.latest_rate(Currency.USD, paid_at)
+                finance.register_payment(
+                    customer=order.customer,
+                    order=order,
+                    amount=(amount * rate).quantize(Decimal("1")),
+                    currency=Currency.UZS,
+                    method=Payment.Method.CASH,
+                    paid_at=paid_at,
+                    user=accountant,
+                )
+            else:
+                finance.register_payment(
+                    customer=order.customer,
+                    order=order,
+                    amount=amount,
+                    currency=Currency.USD,
+                    method=Payment.Method.BANK,
+                    paid_at=paid_at,
+                    user=accountant,
+                )
+
+        mistaken = finance.register_payment(
+            customer=shipped.first().customer,
+            amount=Decimal("100"),
+            currency=Currency.USD,
+            method=Payment.Method.CARD,
+            user=accountant,
+        )
+        finance.cancel_payment(mistaken, user=accountant, reason="Summa xato kiritilgan")
