@@ -31,6 +31,7 @@ THIRD_PARTY_APPS = [
     "simple_history",
 ]
 LOCAL_APPS = [
+    "common",
     "apps.users",
     "apps.customers",
     "apps.catalog",

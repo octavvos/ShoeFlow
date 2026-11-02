@@ -1,4 +1,4 @@
-.PHONY: up down logs migrate migrations superuser shell test lint format
+.PHONY: up down logs migrate migrations superuser seed shell test lint format
 
 up:
 	docker compose up -d --build
@@ -17,6 +17,9 @@ migrations:
 
 superuser:
 	docker compose exec web python manage.py createsuperuser
+
+seed:
+	docker compose exec web python manage.py seed_demo
 
 shell:
 	docker compose exec web python manage.py shell
