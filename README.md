@@ -43,6 +43,30 @@ Har bir push'da GitHub Actions lint, migratsiyalar tekshiruvi va testlarni (cove
 
 Boshqa bazada ishlatish uchun: `DATABASE_URL=postgres://... uv run pytest`.
 
+## Serverga deploy
+
+Kichik VPS (1 CPU, 1 GB RAM) uchun mo'ljallangan yengil stack:
+- **Host'dagi nginx:** reverse proxy, static va media fayllar, certbot orqali HTTPS
+- **Docker'da** ([docker-compose.prod.yml](docker-compose.prod.yml)): 2 worker'li gunicorn, Postgres, Redis va bitta Celery jarayoni (worker va beat birga)
+- Gunicorn faqat `127.0.0.1`'da ochiladi, tashqaridan unga faqat nginx orqali kiriladi
+
+Ubuntu serverda (root sifatida) bitta buyruq:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/octavvos/ShoeFlow/main/deploy/server-setup.sh | bash -s -- api.example.uz
+```
+
+Skript quyidagilarni qiladi:
+1. Docker, nginx va certbot'ni o'rnatadi.
+2. Kodni `/opt/shoeflow`'ga clone qiladi va tasodifiy parollar bilan `.env` yaratadi.
+3. Mavjud nginx'ga yangi sayt qo'shadi. Serverdagi boshqa saytlarga tegmaydi.
+4. Stack'ni ishga tushiradi.
+5. Domen DNS'da shu serverga qaragan bo'lsa, HTTPS sertifikatini oladi.
+
+- **Yangilash:** `/opt/shoeflow/deploy/deploy.sh`. Bu `git pull`, qayta build va health check qiladi.
+- **Avtomatik deploy:** GitHub'da `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` va `DEPLOY_KNOWN_HOSTS` secrets'larini kiritsangiz, `main`'ga har push'da testlar o'tgach CI serverni o'zi yangilaydi.
+- **Demo rejim:** `server-setup.sh` har kuni 03:00 da demo ma'lumotlarni qayta tiklaydigan cron qo'shadi ([deploy/reset-demo.sh](deploy/reset-demo.sh)). Haqiqiy firma ma'lumotlari turgan serverda bu cron'ni o'chiring: `rm /etc/cron.d/shoeflow-demo-reset`.
+
 ## Ma'lumotlar modeli
 
 ```mermaid
