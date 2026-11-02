@@ -2,8 +2,9 @@ from decimal import Decimal
 
 import factory
 
-from apps.catalog.models import Category, Color, ProductModel, SizeRun
+from apps.catalog.models import Category, Color, ProductModel, SizeRun, Variant
 from apps.customers.models import Customer
+from apps.inventory.models import Warehouse
 from apps.users.models import Role, User
 from common.choices import Region
 
@@ -64,3 +65,20 @@ class ProductModelFactory(factory.django.DjangoModelFactory):
     wholesale_price = Decimal("25.00")
     dealer_price = Decimal("23.00")
     retail_price = Decimal("35.00")
+
+
+class WarehouseFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Warehouse
+        django_get_or_create = ("name",)
+
+    name = factory.Sequence(lambda n: f"Ombor {n}")
+
+
+class VariantFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Variant
+
+    product_model = factory.SubFactory(ProductModelFactory)
+    color = factory.SubFactory(ColorFactory)
+    size = factory.Sequence(lambda n: 36 + n % 10)

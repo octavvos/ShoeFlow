@@ -35,6 +35,7 @@ LOCAL_APPS = [
     "apps.users",
     "apps.customers",
     "apps.catalog",
+    "apps.inventory",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -121,6 +122,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "CustomerTypeEnum": "apps.customers.models.Customer.Type",
         "InteractionTypeEnum": "apps.customers.models.Interaction.Type",
+        "StockMovementTypeEnum": "apps.inventory.models.StockMovement.Type",
     },
 }
 
