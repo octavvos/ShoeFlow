@@ -18,7 +18,10 @@ RUN uv sync --frozen --no-install-project $UV_SYNC_ARGS
 
 COPY . .
 
-RUN useradd --create-home --uid 1000 app && chown -R app:app /app
+# staticfiles va media — docker volume'lar; papkalar oldindan yaratilsa, volume shu egasini oladi
+RUN useradd --create-home --uid 1000 app \
+    && mkdir -p /app/staticfiles /app/media \
+    && chown -R app:app /app
 USER app
 
 EXPOSE 8000

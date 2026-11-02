@@ -13,3 +13,4 @@ staticfiles/
 CLAUDE.md
 .coverage
 htmlcov/
+data/
