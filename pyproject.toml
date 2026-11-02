@@ -1,0 +1,48 @@
+[project]
+name = "kosibchi"
+version = "0.1.0"
+description = "Oyoq kiyim ishlab chiqaruvchi firma uchun CRM"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.2,<6.0",
+    "djangorestframework>=3.16",
+    "djangorestframework-simplejwt>=5.5",
+    "drf-spectacular>=0.28",
+    "django-filter>=25.1",
+    "django-environ>=0.12",
+    "django-cors-headers>=4.7",
+    "django-simple-history>=3.8",
+    "psycopg[binary]>=3.2",
+    "celery[redis]>=5.5",
+    "pillow>=11.0",
+    "gunicorn>=23.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.11",
+    "factory-boy>=3.3",
+    "ruff>=0.11",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*.py" = ["F403", "F405"]
