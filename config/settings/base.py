@@ -111,7 +111,7 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Kosibchi CRM API",
+    "TITLE": "ShoeFlow CRM API",
     "DESCRIPTION": "Oyoq kiyim ishlab chiqaruvchi firma uchun CRM",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,

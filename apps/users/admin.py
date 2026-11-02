@@ -10,9 +10,9 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ("role", "is_active", "is_staff")
     fieldsets = (
         *BaseUserAdmin.fieldsets,
-        ("Kosibchi", {"fields": ("role", "phone", "telegram_id")}),
+        ("ShoeFlow", {"fields": ("role", "phone", "telegram_id")}),
     )
     add_fieldsets = (
         *BaseUserAdmin.add_fieldsets,
-        ("Kosibchi", {"fields": ("first_name", "last_name", "role", "phone")}),
+        ("ShoeFlow", {"fields": ("first_name", "last_name", "role", "phone")}),
     )

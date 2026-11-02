@@ -1,4 +1,4 @@
-# Kosibchi CRM
+# ShoeFlow CRM
 
 Oyoq kiyim ishlab chiqaruvchi firma uchun CRM: mijozlar, katalog (model, rang, razmer), buyurtmalar, ishlab chiqarish, ombor va moliya.
 

@@ -1,5 +1,5 @@
 [project]
-name = "kosibchi"
+name = "shoeflow"
 version = "0.1.0"
 description = "Oyoq kiyim ishlab chiqaruvchi firma uchun CRM"
 readme = "README.md"

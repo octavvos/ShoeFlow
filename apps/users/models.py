@@ -17,7 +17,7 @@ class Role(models.TextChoices):
 MANAGEMENT_ROLES = frozenset({Role.ADMIN, Role.DIRECTOR})
 
 
-class KosibchiUserManager(UserManager):
+class ShoeFlowUserManager(UserManager):
     def create_superuser(self, username, email=None, password=None, **extra_fields):
         extra_fields.setdefault("role", Role.ADMIN)
         return super().create_superuser(username, email, password, **extra_fields)
@@ -28,7 +28,7 @@ class User(AbstractUser):
     phone = models.CharField("telefon", max_length=13, blank=True, validators=[phone_validator])
     telegram_id = models.BigIntegerField("Telegram ID", null=True, blank=True, unique=True)
 
-    objects = KosibchiUserManager()
+    objects = ShoeFlowUserManager()
 
     class Meta:
         verbose_name = "foydalanuvchi"

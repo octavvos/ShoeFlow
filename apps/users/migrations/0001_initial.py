@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'foydalanuvchilar',
             },
             managers=[
-                ('objects', apps.users.models.KosibchiUserManager()),
+                ('objects', apps.users.models.ShoeFlowUserManager()),
             ],
         ),
     ]
