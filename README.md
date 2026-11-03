@@ -4,14 +4,20 @@
 
 Oyoq kiyim ishlab chiqaruvchi firma uchun CRM: mijozlar, katalog (model, rang, razmer), ombor, buyurtmalar va moliya (to'lovlar, qarzdorlik, akt-sverka).
 
-**Stek:** Python 3.12 · Django 5.2 · DRF · PostgreSQL 16 · Redis · Celery · JWT · Docker
+**Backend:** Python 3.12 · Django 5.2 · DRF · PostgreSQL 16 · Redis · Celery · JWT · Docker
+
+**Frontend:** React 18 · TypeScript · Vite · Tailwind CSS · TanStack Query
 
 ## Jonli demo
 
-**Swagger:** https://shoeflow.bann.uz/api/docs/
+- **Ilova:** https://shoeflow.bann.uz/. Login sahifasidagi demo tugmalardan birini bosing.
+- **API (Swagger):** https://shoeflow.bann.uz/api/docs/. Avval `POST /api/v1/auth/token/` orqali token oling, keyin uni **Authorize** tugmasiga kiriting.
 
-1. `POST /api/v1/auth/token/` orqali quyidagi foydalanuvchilardan biri bilan token oling.
-2. Swagger'dagi **Authorize** tugmasiga `access` tokenni kiriting.
+| Kompyuter | Telefon |
+|---|---|
+| ![Bosh sahifa](docs/screenshots/dashboard.png) | ![Telefonda bosh sahifa](docs/screenshots/mobile-dashboard.png) |
+| ![Mijoz: balans va akt-sverka](docs/screenshots/customer.png) | ![Telefonda buyurtma](docs/screenshots/mobile-order.png) |
+| ![Buyurtmalar, tungi rejim](docs/screenshots/orders-dark.png) | ![Telefonda login](docs/screenshots/mobile-login.png) |
 
 Har bir rol tizimni o'z ruxsatlari doirasida ko'radi:
 
@@ -38,6 +44,14 @@ make superuser                # birinchi admin
 - API: http://localhost:8000/api/v1/
 - Swagger: http://localhost:8000/api/docs/
 - Admin panel: http://localhost:8000/admin/
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:5173, API so'rovlari localhost:8000'ga proxy qilinadi
+```
 
 ### Docker'siz (lokal)
 
@@ -82,6 +96,7 @@ Skript quyidagilarni qiladi:
 5. Domen DNS'da shu serverga qaragan bo'lsa, HTTPS sertifikatini oladi.
 
 - **Yangilash:** `/opt/shoeflow/deploy/deploy.sh`. Bu `git pull`, qayta build va health check qiladi.
+- **Frontend:** kichik serverda Node build xotiraga sig'maydi (~460 MB). Shuning uchun uni GitHub Actions build qilib, `frontend-latest` release'iga yuklaydi, `deploy.sh` esa tayyor fayllarni yuklab oladi.
 - **Avtomatik deploy:** GitHub'da `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` va `DEPLOY_KNOWN_HOSTS` secrets'larini kiritsangiz, `main`'ga har push'da testlar o'tgach CI serverni o'zi yangilaydi.
 - **Demo rejim:** `server-setup.sh` har kuni 03:00 da demo ma'lumotlarni qayta tiklaydigan cron qo'shadi ([deploy/reset-demo.sh](deploy/reset-demo.sh)). Haqiqiy firma ma'lumotlari turgan serverda bu cron'ni o'chiring: `rm /etc/cron.d/shoeflow-demo-reset`.
 
@@ -200,6 +215,7 @@ apps/inventory/    omborlar, qoldiqlar, harakatlar jurnali (ledger)
 apps/orders/       buyurtmalar, korobka bo'yicha kiritish, holatlar
 apps/finance/      to'lovlar, mijoz hisobi (ledger), kredit limiti, akt-sverka, valyuta kurslari
 tests/
+frontend/          React ilova (pages/, components/, lib/api.ts — JWT va tokenni avtomatik yangilash)
 ```
 
 Biznes-logika `services.py`'da, murakkab so'rovlar `selectors.py`'da turadi, view'larda esa faqat HTTP qismi bo'ladi.
