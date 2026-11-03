@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { Button, ErrorBox, Field, Input } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { pages } from "@/pages";
 
 const DEMO_USERS = [
   { username: "direktor", label: "Direktor" },
@@ -27,6 +28,8 @@ export default function LoginPage() {
 
   async function submit(e?: FormEvent, creds = { username, password }) {
     e?.preventDefault();
+    // Parol tekshirilayotganda (serverda ~1 s) dashboard kodi parallel yuklanadi
+    void pages.dashboard();
     setLoading(true);
     setError(null);
     try {

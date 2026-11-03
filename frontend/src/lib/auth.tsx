@@ -37,8 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (username: string, password: string) => {
-      await api.login(username, password);
-      const me = await api.get<User>("/users/me/");
+      const me = (await api.login<User>(username, password)) ?? (await api.get<User>("/users/me/"));
       queryClient.setQueryData(["me"], me);
     },
     [queryClient],

@@ -144,7 +144,8 @@ export const api = {
     link.click();
     URL.revokeObjectURL(href);
   },
-  async login(username: string, password: string) {
+  /** Tokenlarni saqlaydi va backend login javobida qaytargan foydalanuvchini beradi */
+  async login<U>(username: string, password: string): Promise<U | undefined> {
     const res = await fetch(`${BASE}/auth/token/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -152,6 +153,7 @@ export const api = {
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) throw new ApiError(res.status, data);
-    tokens.set(data as Tokens);
+    tokens.set({ access: data.access, refresh: data.refresh });
+    return data.user;
   },
 };
