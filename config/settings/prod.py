@@ -2,6 +2,10 @@ from .base import *
 
 DEBUG = False
 
+# Har so'rovda bazaga qayta ulanmaslik uchun ulanish 60 s saqlanadi
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+
 # Konteyner ichidagi healthcheck localhost orqali murojaat qiladi
 ALLOWED_HOSTS = [*ALLOWED_HOSTS, "localhost"]
 
