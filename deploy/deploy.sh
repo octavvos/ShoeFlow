@@ -5,7 +5,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 compose="docker compose -f docker-compose.prod.yml"
 
-git pull --ff-only
+# Skript o'zini ham yangilaydi: pull'dan keyin yangi versiyasi bilan qayta ishga tushadi
+if [ -z "${SHOEFLOW_UPDATED:-}" ]; then
+    git pull --ff-only
+    SHOEFLOW_UPDATED=1 exec "$0" "$@"
+fi
+
 # static/media — nginx o'qiydi, konteyner (uid 1000) yozadi
 install -d -o 1000 -g 1000 -m 755 data/static data/media
 $compose up -d --build --remove-orphans
@@ -16,7 +21,7 @@ echo "==> Frontend"
 repo=$(git config --get remote.origin.url | sed -e 's|\.git$||' -e 's|^git@github.com:|https://github.com/|')
 tmp=$(mktemp -d)
 if curl -fsSL "$repo/releases/download/frontend-latest/frontend.tar.gz" -o "$tmp/frontend.tar.gz"; then
-    mkdir -p "$tmp/dist" && tar -xzf "$tmp/frontend.tar.gz" -C "$tmp/dist"
+    mkdir -p "$tmp/dist" && tar --no-same-owner -xzf "$tmp/frontend.tar.gz" -C "$tmp/dist"
     rm -rf data/frontend.old && { [ ! -d data/frontend ] || mv data/frontend data/frontend.old; }
     mv "$tmp/dist" data/frontend && chmod 755 data/frontend && rm -rf data/frontend.old
     echo "frontend: $(cat data/frontend/VERSION 2>/dev/null || echo '?')"
