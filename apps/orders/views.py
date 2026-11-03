@@ -1,5 +1,6 @@
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -11,7 +12,7 @@ from common.permissions import RoleBasedPermission
 from . import services
 from .filters import OrderFilter
 from .models import OrderItem
-from .selectors import visible_orders
+from .selectors import order_status_counts, visible_orders
 from .serializers import (
     AddBoxesSerializer,
     AddItemSerializer,
@@ -50,6 +51,12 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         return OrderSerializer if self.action == "list" else OrderDetailSerializer
+
+    @extend_schema(responses={200: OpenApiTypes.OBJECT})
+    @action(detail=False, methods=["get"])
+    def stats(self, request):
+        """Holatlar bo'yicha buyurtmalar soni: {"draft": 2, "confirmed": 5, ...}"""
+        return Response(order_status_counts(request.user))
 
     def destroy(self, request, *args, **kwargs):
         return Response(

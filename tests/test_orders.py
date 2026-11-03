@@ -273,3 +273,29 @@ def test_filter_by_status(client_for, manager_client, order_url, variants, stock
     director = client_for(Role.DIRECTOR)
     assert director.get("/api/v1/orders/", {"status": "confirmed"}).data["count"] == 1
     assert director.get("/api/v1/orders/", {"status": "draft"}).data["count"] == 0
+
+
+def test_status_stats_are_scoped_to_manager(
+    client_for, manager_client, order_url, variants, stocked
+):
+    manager_client.post(order_url + "items/", {"variant": variants[40].id, "quantity": 1})
+    manager_client.post(order_url + "confirm/")
+    other = client_for(UserFactory(role=Role.SALES_MANAGER))
+    other_customer = CustomerFactory(manager=other.user)
+    other.post(
+        "/api/v1/orders/",
+        {"customer": other_customer.id, "warehouse": Order.objects.get().warehouse_id},
+        format="json",
+    )
+
+    own = manager_client.get("/api/v1/orders/stats/").data
+    assert own == {"draft": 0, "confirmed": 1, "shipped": 0, "delivered": 0, "cancelled": 0}
+
+    everything = client_for(Role.DIRECTOR).get("/api/v1/orders/stats/").data
+    assert everything["draft"] == 1 and everything["confirmed"] == 1
+
+
+def test_status_stats_single_query(client_for, django_assert_max_num_queries):
+    client = client_for(Role.DIRECTOR)
+    with django_assert_max_num_queries(3):  # sessiya/auth + bitta GROUP BY
+        assert client.get("/api/v1/orders/stats/").status_code == 200
