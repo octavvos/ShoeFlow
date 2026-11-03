@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDate, formatMoney, formatNumber } from "@/lib/format";
 import { can, hasRole } from "@/lib/roles";
-import type { CustomerBalance, Order, Paginated, StockBalance } from "@/lib/types";
+import type { CustomerBalance, Order, OrderStatus, Paginated, StockBalance } from "@/lib/types";
 
 const LOW_STOCK = 10;
 
@@ -35,9 +35,6 @@ function Panel({ title, to, children }: { title: string; to: string; children: R
   );
 }
 
-const count = (path: string, query: Record<string, string | number | boolean>) =>
-  api.get<Paginated<unknown>>(path, { ...query, page_size: 1 }).then((r) => r.count);
-
 export default function DashboardPage() {
   const { user } = useAuth();
   const showOrders = hasRole(user, can.viewOrders);
@@ -48,13 +45,11 @@ export default function DashboardPage() {
     queryKey: ["dashboard", "orders"],
     enabled: showOrders,
     queryFn: async () => {
-      const [draft, confirmed, shipped, recent] = await Promise.all([
-        count("/orders/", { status: "draft" }),
-        count("/orders/", { status: "confirmed" }),
-        count("/orders/", { status: "shipped" }),
+      const [stats, recent] = await Promise.all([
+        api.get<Record<OrderStatus, number>>("/orders/stats/"),
         api.get<Paginated<Order>>("/orders/", { page_size: 6 }),
       ]);
-      return { draft, confirmed, shipped, recent: recent.results };
+      return { ...stats, recent: recent.results };
     },
   });
 

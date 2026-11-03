@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "./components/layout/AppLayout";
@@ -6,16 +6,18 @@ import { Spinner } from "./components/ui";
 import { useAuth } from "./lib/auth";
 import { can, hasRole } from "./lib/roles";
 import type { Role } from "./lib/types";
-import CatalogPage from "./pages/Catalog";
-import CustomerDetailPage from "./pages/CustomerDetail";
-import CustomersPage from "./pages/Customers";
-import DashboardPage from "./pages/Dashboard";
-import FinancePage from "./pages/Finance";
-import LoginPage from "./pages/Login";
-import NotFoundPage from "./pages/NotFound";
-import OrderDetailPage from "./pages/OrderDetail";
-import OrdersPage from "./pages/Orders";
-import StockPage from "./pages/Stock";
+import { pages } from "./pages";
+
+const LoginPage = lazy(pages.login);
+const DashboardPage = lazy(pages.dashboard);
+const OrdersPage = lazy(pages.orders);
+const OrderDetailPage = lazy(pages.orderDetail);
+const CustomersPage = lazy(pages.customers);
+const CustomerDetailPage = lazy(pages.customerDetail);
+const StockPage = lazy(pages.stock);
+const CatalogPage = lazy(pages.catalog);
+const FinancePage = lazy(pages.finance);
+const NotFoundPage = lazy(pages.notFound);
 
 function Guard({ allowed, children }: { allowed?: (role: Role) => boolean; children: ReactNode }) {
   const { user } = useAuth();
@@ -29,9 +31,11 @@ export default function App() {
   if (loading) return <Spinner className="min-h-screen" />;
   if (!user) {
     return (
-      <Routes>
-        <Route path="*" element={<LoginPage />} />
-      </Routes>
+      <Suspense fallback={<Spinner className="min-h-screen" />}>
+        <Routes>
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </Suspense>
     );
   }
 

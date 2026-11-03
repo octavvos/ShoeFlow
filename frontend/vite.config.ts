@@ -8,6 +8,15 @@ export default defineConfig({
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
+        },
+      },
+    },
+  },
   server: {
     // Lokal ishlaganda API so'rovlari Django'ga (manage.py runserver) yo'naltiriladi
     proxy: {

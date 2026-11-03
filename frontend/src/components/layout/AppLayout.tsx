@@ -14,12 +14,14 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "@/lib/auth";
 import { initials } from "@/lib/format";
 import { useTheme } from "@/lib/hooks";
+import { preloadPages } from "@/pages";
+import { Spinner } from "../ui";
 import { can, hasRole } from "@/lib/roles";
 import type { Role } from "@/lib/types";
 
@@ -112,6 +114,7 @@ export function AppLayout() {
   const bottomItems = items.slice(0, 4);
 
   useEffect(() => setDrawer(false), [location.pathname]);
+  useEffect(preloadPages, []);
 
   return (
     <div className="min-h-screen">
@@ -136,7 +139,9 @@ export function AppLayout() {
 
       <main className="px-4 pb-28 pt-6 sm:px-6 lg:ml-64 lg:px-10 lg:pb-10 lg:pt-8">
         <div className="mx-auto max-w-7xl">
-          <Outlet />
+          <Suspense fallback={<Spinner />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
 
