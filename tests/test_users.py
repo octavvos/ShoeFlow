@@ -14,6 +14,8 @@ def test_obtain_jwt_token(api_client):
     )
     assert response.status_code == 200
     assert {"access", "refresh"} <= response.data.keys()
+    assert response.data["user"]["username"] == "ali"
+    assert response.data["user"]["role"] == Role.SALES_MANAGER
 
 
 def test_me_returns_current_user(client_for):

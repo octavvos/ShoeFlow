@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User
 
@@ -52,3 +53,12 @@ class ChangePasswordSerializer(serializers.Serializer):
     def validate_new_password(self, value):
         validate_password(value, self.context["request"].user)
         return value
+
+
+class TokenWithUserSerializer(TokenObtainPairSerializer):
+    """Token bilan birga foydalanuvchi — frontend /users/me/ ga alohida so'rov yubormaydi."""
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data["user"] = UserSerializer(self.user).data
+        return data
