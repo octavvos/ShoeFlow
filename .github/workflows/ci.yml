@@ -78,6 +78,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "$GITHUB_SHA" > dist/VERSION
+          # nginx gzip_static uchun oldindan siqilgan nusxalar — har so'rovda CPU sarflanmaydi
+          find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' \) -exec gzip -9 -k {} +
           tar -czf frontend.tar.gz -C dist .
           gh release view frontend-latest >/dev/null 2>&1 || \
             gh release create frontend-latest --title "Frontend build" \

@@ -69,6 +69,10 @@ echo "==> HTTPS"
 server_ip=$(curl -fsS https://api.ipify.org || true)
 if getent hosts "$DOMAIN" | grep -q "^$server_ip "; then
     certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect
+    # HTTP/2: bir ulanishda parallel so'rovlar (dashboard bir vaqtda bir nechta API so'rov yuboradi)
+    sed -i "s|listen 443 ssl; # managed by Certbot|listen 443 ssl http2; # managed by Certbot|" \
+        /etc/nginx/sites-available/shoeflow
+    nginx -t && systemctl reload nginx
     # Sertifikat bor — endi Django ham HTTPS rejimiga o'tadi
     sed -i -e "s|^DJANGO_HTTPS=.*|DJANGO_HTTPS=True|" -e "s|http://$DOMAIN|https://$DOMAIN|" .env
     docker compose -f docker-compose.prod.yml up -d
